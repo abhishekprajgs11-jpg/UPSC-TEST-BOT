@@ -92,7 +92,7 @@ bot.command('add', async (ctx) => {
 });
 
 // Step 1: Handle Type Selection
-bot.action(/add_type_(.+)/, async (ctx) => {
+bot.action(/^add_type_(.+)$/, async (ctx) => {
     if (ctx.from.id.toString() !== ADMIN_ID) return;
     const type = ctx.match[1];
     
@@ -150,7 +150,7 @@ bot.on('document', async (ctx, next) => {
 });
 
 // Step 4: Handle Coaching Selection
-bot.action(/add_coach_(.+)/, async (ctx) => {
+bot.action(/^add_coach_(.+)$/, async (ctx) => {
     if (ctx.from.id.toString() !== ADMIN_ID) return;
     const coaching = ctx.match[1];
 
@@ -180,7 +180,7 @@ const sendYearOptions = (ctx) => {
     }
 };
 
-bot.action(/add_year_(.+)/, async (ctx) => {
+bot.action(/^add_year_(.+)$/, async (ctx) => {
     if (ctx.from.id.toString() !== ADMIN_ID) return;
     const year = ctx.match[1];
     await AdminState.findOneAndUpdate({ adminId: ADMIN_ID }, { year, step: 'WAITING_TEST_CODE' });
@@ -255,7 +255,7 @@ bot.on('text', async (ctx, next) => {
 // USER BROWSING FLOW (Unchanged mostly)
 // -----------------------------------------------------
 
-bot.action(/year_(.+)/, async (ctx) => {
+bot.action(/^year_(.+)$/, async (ctx) => {
     const year = ctx.match[1];
     const coachings = await TestSeries.distinct('coaching', { year });
     
@@ -266,7 +266,7 @@ bot.action(/year_(.+)/, async (ctx) => {
     ctx.editMessageText(`📅 **Selected Year:** ${year}\n\n👉 Now select a Coaching:`, { parse_mode: 'Markdown', reply_markup: keyboard.reply_markup });
 });
 
-bot.action(/coaching_(.+)_(.+)/, async (ctx) => {
+bot.action(/^coaching_(.+)_(.+)$/, async (ctx) => {
     const year = ctx.match[1];
     const coaching = ctx.match[2];
     
@@ -279,20 +279,23 @@ bot.action(/coaching_(.+)_(.+)/, async (ctx) => {
     ctx.editMessageText(`📅 **Year:** ${year}\n📌 **Coaching:** ${coaching}\n\n👉 Select a Test Code:`, { parse_mode: 'Markdown', reply_markup: keyboard.reply_markup });
 });
 
-bot.action(/test_(.+)/, async (ctx) => {
+bot.action(/^test_(.+)$/, async (ctx) => {
     const testId = ctx.match[1];
-    const test = await TestSeries.findById(testId);
-    
-    if (!test) return ctx.answerCbQuery("Test not found!");
+    try {
+        const test = await TestSeries.findById(testId);
+        if (!test) return ctx.answerCbQuery("Test not found!");
 
-    ctx.answerCbQuery("Sending PDFs...");
-    
-    if (test.questionPdfId) {
-        await ctx.replyWithDocument(test.questionPdfId, { caption: `📚 ${test.coaching} - ${test.testCode} (Question)` });
-    }
-    
-    if (test.solutionPdfId) {
-        await ctx.replyWithDocument(test.solutionPdfId, { caption: `💡 ${test.coaching} - ${test.testCode} (Solution)` });
+        ctx.answerCbQuery("Sending PDFs...");
+        
+        if (test.questionPdfId) {
+            await ctx.replyWithDocument(test.questionPdfId, { caption: `📚 ${test.coaching} - ${test.testCode} (Question)` });
+        }
+        
+        if (test.solutionPdfId) {
+            await ctx.replyWithDocument(test.solutionPdfId, { caption: `💡 ${test.coaching} - ${test.testCode} (Solution)` });
+        }
+    } catch(e) {
+        ctx.answerCbQuery("Invalid request!");
     }
 });
 
