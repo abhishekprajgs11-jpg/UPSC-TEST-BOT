@@ -44,7 +44,7 @@ bot.use(async (ctx, next) => {
 // -----------------------------------------------------
 
 bot.start(async (ctx) => {
-    const welcomeMessage = `🎯 **WELCOME TO UPSC CSE TEST SERIES** 🇮🇳\n\n🔥 **Your UPSC Preparation. Your Test. Your Progress.**\n\nWelcome, Aspirant! 👋\nThis bot is designed to help you **practice, evaluate & improve** your UPSC CSE preparation with carefully curated **Test Series & Practice Questions**.\n\n📚 **What you can expect here:**\n• 📝 UPSC CSE Prelims-focused Tests\n• 🎯 High-quality MCQs & Most Important Questions\n• 🔥 Subject-wise & Full-Length Tests\n• 📊 Practice to improve accuracy & speed\n• 🧠 Questions designed for serious UPSC aspirants\n\n🚀 **Your preparation becomes stronger with every test you attempt.**\n\n👉 **Select a Test Series below and start your preparation!**\n\n💬 **For any query, issue, or assistance:**\nContact **@Shrma_Ishuu_bot**\n\n🇮🇳 **Prepare Smart. Practice More. Crack UPSC CSE.** 💯`;
+    const welcomeMessage = `🎯 **WELCOME TO UPSC CSE TEST SERIES** 🇮🇳\n\n🔥 **Your UPSC Preparation. Your Test. Your Progress.**\n\nWelcome, Aspirant! 👋\nThis bot is designed to help you **practice, evaluate & improve** your UPSC CSE preparation with carefully curated **Test Series & Practice Questions**.\n\n📚 **What you can expect here:**\n• 📝 UPSC CSE Prelims-focused Tests\n• 🎯 High-quality MCQs & Most Important Questions\n• 🔥 Subject-wise & Full-Length Tests\n• 📊 Practice to improve accuracy & speed\n• 🧠 Questions designed for serious UPSC aspirants\n\n🚀 **Your preparation becomes stronger with every test you attempt.**\n\n👉 **Select a Test Series below and start your preparation!**\n\n🇮🇳 **Prepare Smart. Practice More. Crack UPSC CSE.** 💯`;
 
     const years = await TestSeries.distinct('year');
     
