@@ -13,16 +13,24 @@ const connectDB = async () => {
         await mongoose.connect(process.env.MONGODB_URI, {
             useNewUrlParser: true,
             useUnifiedTopology: true,
+            serverSelectionTimeoutMS: 5000 // Timeout after 5s instead of hanging
         });
         console.log("MongoDB Connected");
     } catch (error) {
         console.error("MongoDB Connection Error:", error);
+        throw error; // Throw so we can catch it in middleware
     }
 };
 
 bot.use(async (ctx, next) => {
-    await connectDB();
-    return next();
+    try {
+        await connectDB();
+        return next();
+    } catch (err) {
+        if (ctx.chat) {
+            await ctx.reply("Database is temporarily unavailable. Please make sure MongoDB Network Access is set to 0.0.0.0/0.");
+        }
+    }
 });
 
 // START COMMAND
