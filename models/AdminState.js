@@ -33,6 +33,18 @@ const adminStateSchema = new mongoose.Schema({
   testCode: {
     type: String,
     default: null
+  },
+  operation: {
+    type: String, // 'ADD', 'DEL', 'EDIT'
+    default: 'ADD'
+  },
+  targetType: {
+    type: String, // 'YEAR', 'COACHING', 'TEST'
+    default: null
+  },
+  oldName: {
+    type: String,
+    default: null
   }
 }, { timestamps: true });
 
