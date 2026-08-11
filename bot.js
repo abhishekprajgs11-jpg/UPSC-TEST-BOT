@@ -44,7 +44,7 @@ bot.use(async (ctx, next) => {
 // -----------------------------------------------------
 
 bot.start(async (ctx) => {
-    const welcomeMessage = `🎯 **WELCOME TO UPSC CSE TEST SERIES** 🇮🇳\n\n🔥 **Your UPSC Preparation. Your Test. Your Progress.**\n\nWelcome, Aspirant! 👋\nThis bot is designed to help you **practice, evaluate & improve** your UPSC CSE preparation with carefully curated **Test Series & Practice Questions**.\n\n📚 **What you can expect here:**\n• 📝 UPSC CSE Prelims-focused Tests\n• 🎯 High-quality MCQs & Most Important Questions\n• 🔥 Subject-wise & Full-Length Tests\n• 📊 Practice to improve accuracy & speed\n• 🧠 Questions designed for serious UPSC aspirants\n\n🚀 **Your preparation becomes stronger with every test you attempt.**\n\n👉 **Select a Test Series below and start your preparation!**\n\n🇮🇳 **Prepare Smart. Practice More. Crack UPSC CSE.** 💯`;
+    const welcomeMessage = `🎯 **WELCOME TO UPSC CSE TEST SERIES** 🇮🇳\n\n🔥 **Your UPSC Preparation. Your Test. Your Progress.**\n\nWelcome, Aspirant! 👋\nThis bot is designed to help you **practice, evaluate & improve** your UPSC CSE preparation with carefully curated **Test Series & Practice Questions**.\n\n📚 **What you can expect here:**\n• 📝 UPSC CSE Prelims-focused Tests\n• 🎯 High-quality MCQs & Most Important Questions\n• 🔥 Subject-wise & Full-Length Tests\n• 📊 Practice to improve accuracy & speed\n• 🧠 Questions designed for serious UPSC aspirants\n\n🚀 **Your preparation becomes stronger with every test you attempt.**\n\n👉 **Select a Test Series below and start your preparation!**\n\n💬 **For any query, issue, or assistance:**\nContact **@Shrma\\_Ishuu\\_bot**\n\n🇮🇳 **Prepare Smart. Practice More. Crack UPSC CSE.** 💯`;
 
     const years = await TestSeries.distinct('year');
     
@@ -227,6 +227,24 @@ bot.on('text', async (ctx, next) => {
         
         // Clear state
         await AdminState.findOneAndDelete({ adminId: ADMIN_ID });
+    } else if (state.step === 'EDIT_WAITING_NEW_NAME') {
+        const newName = text;
+        try {
+            if (state.targetType === 'YEAR') {
+                await TestSeries.updateMany({ year: state.oldName }, { $set: { year: newName } });
+                ctx.reply(`✅ Successfully renamed Year from **${state.oldName}** to **${newName}**!`, { parse_mode: 'Markdown' });
+            } else if (state.targetType === 'COACHING') {
+                await TestSeries.updateMany({ year: state.year, coaching: state.oldName }, { $set: { coaching: newName } });
+                ctx.reply(`✅ Successfully renamed Coaching from **${state.oldName}** to **${newName}** in Year ${state.year}!`, { parse_mode: 'Markdown' });
+            } else if (state.targetType === 'TEST') {
+                await TestSeries.updateOne({ year: state.year, coaching: state.coaching, testCode: state.oldName }, { $set: { testCode: newName } });
+                ctx.reply(`✅ Successfully renamed Test Code from **${state.oldName}** to **${newName}**!`, { parse_mode: 'Markdown' });
+            }
+        } catch (e) {
+            console.error(e);
+            ctx.reply("❌ Error updating database.");
+        }
+        await AdminState.findOneAndDelete({ adminId: ADMIN_ID });
     } else {
         return next();
     }
@@ -285,5 +303,7 @@ bot.action("back_start", async (ctx) => {
     
     ctx.editMessageText("👉 **Select a Test Series Year below:**", { parse_mode: 'Markdown', reply_markup: keyboard.reply_markup });
 });
+
+require('./adminCommands')(bot);
 
 module.exports = bot;
