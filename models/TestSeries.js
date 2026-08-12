@@ -15,7 +15,7 @@ const testSeriesSchema = new mongoose.Schema({
   },
   questionPdfId: {
     type: String,
-    required: true,
+    required: false,
   },
   solutionPdfId: {
     type: String,
