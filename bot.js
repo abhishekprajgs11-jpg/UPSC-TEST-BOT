@@ -324,11 +324,11 @@ bot.action(/^test_(.+)$/, async (ctx) => {
         ctx.answerCbQuery("Sending PDFs...");
         
         if (test.questionPdfId) {
-            await ctx.replyWithDocument(test.questionPdfId, { caption: `📚 ${test.coaching} - ${test.testCode} (Question)\n\n💬 For any query, issue, or assistance:\nContact **@Shrma\_Ishuu\_bot` });
+            await ctx.replyWithDocument(test.questionPdfId, { caption: `📚 ${test.coaching} - ${test.testCode} (Question)\n\n💬 For any query, issue, or assistance:\nContact @Shrma\_Ishuu\_bot 💞✅` });
         }
         
         if (test.solutionPdfId) {
-            await ctx.replyWithDocument(test.solutionPdfId, { caption: `💡 ${test.coaching} - ${test.testCode} (Solution)\n\n💬 For any query, issue, or assistance:\nContact @Shrma\_Ishuu\_bot` });
+            await ctx.replyWithDocument(test.solutionPdfId, { caption: `💡 ${test.coaching} - ${test.testCode} (Solution)\n\n💬 For any query, issue, or assistance:\nContact @Shrma\_Ishuu\_bot 💞✅` });
         }
     } catch(e) {
         ctx.answerCbQuery("Invalid request!");
