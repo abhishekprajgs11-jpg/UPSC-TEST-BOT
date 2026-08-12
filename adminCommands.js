@@ -166,11 +166,62 @@ module.exports = (bot) => {
         }
     });
 
-    bot.action(/edit_test_(.+)/, async (ctx) => {
+    bot.action(/^edit_test_(.+)$/, async (ctx) => {
         if (ctx.from.id.toString() !== ADMIN_ID) return;
         const testCode = ctx.match[1];
         await AdminState.findOneAndUpdate({ adminId: ADMIN_ID }, { testCode, step: 'EDIT_WAITING_NEW_NAME', oldName: testCode });
         ctx.editMessageText(`You selected Test Code: **${testCode}**\n\nPlease type the **NEW TEST CODE**:`, { parse_mode: 'Markdown' });
+    });
+
+    // -----------------------------------------------------
+    // BULK WIZARD (/bulk)
+    // -----------------------------------------------------
+    bot.command('bulk', async (ctx) => {
+        if (ctx.from.id.toString() !== ADMIN_ID) return;
+        await AdminState.findOneAndUpdate(
+            { adminId: ADMIN_ID }, 
+            { step: 'BULK_CHOOSE_YEAR', operation: 'BULK', targetType: null, year: null, coaching: null, testCode: null },
+            { upsert: true }
+        );
+        const keyboard = Markup.inlineKeyboard([
+            Markup.button.callback("2025", "bulk_year_2025"),
+            Markup.button.callback("2026", "bulk_year_2026"),
+            Markup.button.callback("2027", "bulk_year_2027"),
+            Markup.button.callback("2028", "bulk_year_2028")
+        ], { columns: 2 });
+        ctx.reply("📁 **BULK UPLOAD MODE**\n\nSelect the **Year** first: (Use /cancel to stop)", { parse_mode: 'Markdown', reply_markup: keyboard.reply_markup });
+    });
+
+    bot.action(/^bulk_year_(.+)$/, async (ctx) => {
+        if (ctx.from.id.toString() !== ADMIN_ID) return;
+        const year = ctx.match[1];
+        await AdminState.findOneAndUpdate({ adminId: ADMIN_ID }, { year, step: 'BULK_CHOOSE_COACHING' });
+        
+        let dbCoachings = await TestSeries.distinct('coaching');
+        let DEFAULT_COACHINGS = [
+            "VISION IAS", "VAJIRAM & RAVI POWERUP TEST", "FORUM IAS", 
+            "FORUM SFG LEVEL 01", "FORUM IAS SFG LEVEL 02", "PW SRIJAN", 
+            "VISION IAS MINI TEST", "VAJIRAM CAMP"
+        ];
+        let allCoachings = [...new Set([...DEFAULT_COACHINGS, ...dbCoachings])];
+        
+        let buttons = allCoachings.map(c => Markup.button.callback(c.substring(0, 30), `bulk_coach_${c}`));
+        buttons.push(Markup.button.callback("➕ OTHERS (Type it)", "bulk_coach_OTHERS"));
+        
+        ctx.editMessageText(`Selected Year: **${year}**\n\nNow, select the **Coaching**:`, { parse_mode: 'Markdown', reply_markup: Markup.inlineKeyboard(buttons, {columns: 2}).reply_markup });
+    });
+
+    bot.action(/^bulk_coach_(.+)$/, async (ctx) => {
+        if (ctx.from.id.toString() !== ADMIN_ID) return;
+        const coaching = ctx.match[1];
+
+        if (coaching === 'OTHERS') {
+            await AdminState.findOneAndUpdate({ adminId: ADMIN_ID }, { step: 'BULK_WAITING_CUSTOM_COACHING' });
+            ctx.editMessageText("Please type the name of the new Coaching:");
+        } else {
+            const state = await AdminState.findOneAndUpdate({ adminId: ADMIN_ID }, { coaching, step: 'WAITING_BULK_PDFS' }, { new: true });
+            ctx.editMessageText(`🚀 **BULK MODE ACTIVATED**\n\n📅 Year: **${state.year}**\n📌 Coaching: **${state.coaching}**\n\n👉 **Send/Upload all your PDFs now.**\nI will automatically extract the Test Code and Question/Solution type from the filenames.\n\nType /cancel or /stopbulk when you are done.`, { parse_mode: 'Markdown' });
+        }
     });
 
 };
