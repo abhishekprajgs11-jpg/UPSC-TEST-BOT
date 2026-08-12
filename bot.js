@@ -66,10 +66,10 @@ bot.help((ctx) => {
 // ADMIN WIZARD (/add, /cancel)
 // -----------------------------------------------------
 
-bot.command('cancel', async (ctx) => {
+bot.command(['cancel', 'stopbulk'], async (ctx) => {
     if (ctx.from.id.toString() !== ADMIN_ID) return;
     await AdminState.findOneAndDelete({ adminId: ADMIN_ID });
-    ctx.reply("❌ Operation cancelled.");
+    ctx.reply("❌ Operation cancelled / Bulk Mode stopped.");
 });
 
 bot.command('add', async (ctx) => {
@@ -129,6 +129,7 @@ bot.on('document', async (ctx, next) => {
     if (!state) return next();
 
     const fileId = ctx.message.document.file_id;
+    const fileName = ctx.message.document.file_name || "";
 
     if (state.step === 'WAITING_TEST_PDF') {
         state.questionPdfId = fileId;
@@ -144,6 +145,36 @@ bot.on('document', async (ctx, next) => {
         state.solutionPdfId = fileId;
         await state.save();
         await sendCoachingOptions(ctx, state);
+    } else if (state.step === 'WAITING_BULK_PDFS') {
+        // Bulk parsing logic
+        const codeMatch = fileName.match(/\d+/);
+        if (!codeMatch) {
+            return ctx.reply(`⚠️ Ignored \`${fileName}\` (No digits/Test Code found)`, { parse_mode: 'Markdown' });
+        }
+        const testCode = codeMatch[0];
+        
+        const isSol = fileName.toUpperCase().includes('SOL');
+        const isTest = fileName.toUpperCase().includes('TEST') || fileName.toUpperCase().includes('TST');
+        
+        if (!isSol && !isTest) {
+             return ctx.reply(`⚠️ Ignored \`${fileName}\` (No 'TEST' or 'SOL' keyword found in name)`, { parse_mode: 'Markdown' });
+        }
+
+        try {
+            let test = await TestSeries.findOne({ year: state.year, coaching: state.coaching, testCode });
+            if (!test) {
+                test = new TestSeries({ year: state.year, coaching: state.coaching, testCode });
+            }
+            if (isSol) test.solutionPdfId = fileId;
+            else test.questionPdfId = fileId;
+            
+            await test.save();
+            ctx.reply(`✅ Saved: **${testCode} (${isSol ? 'Solution' : 'Test'})**`, { parse_mode: 'Markdown' });
+        } catch (e) {
+            console.error(e);
+            ctx.reply(`❌ Error saving \`${fileName}\``, { parse_mode: 'Markdown' });
+        }
+
     } else {
         return next();
     }
@@ -201,6 +232,11 @@ bot.on('text', async (ctx, next) => {
         state.step = 'CHOOSE_YEAR';
         await state.save();
         sendYearOptions(ctx);
+    } else if (state.step === 'BULK_WAITING_CUSTOM_COACHING') {
+        state.coaching = text;
+        state.step = 'WAITING_BULK_PDFS';
+        await state.save();
+        ctx.reply(`🚀 **BULK MODE ACTIVATED**\n\n📅 Year: **${state.year}**\n📌 Coaching: **${state.coaching}**\n\n👉 **Send/Upload all your PDFs now.**\nI will automatically extract the Test Code and Question/Solution type from the filenames.\n\nType /cancel or /stopbulk when you are done.`, { parse_mode: 'Markdown' });
     } else if (state.step === 'CHOOSE_YEAR') {
         state.year = text;
         state.step = 'WAITING_TEST_CODE';
